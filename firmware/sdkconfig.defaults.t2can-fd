@@ -87,3 +87,7 @@ CONFIG_ESP_WIFI_CACHE_TX_BUFFER_NUM=16
 CONFIG_ESP_WIFI_RX_BA_WIN=6
 # CONFIG_ESP_WIFI_IRAM_OPT is not set
 # CONFIG_ESP_WIFI_RX_IRAM_OPT is not set
+
+# FATFS buffers for the SPI3 microSD slot (Adafruit #4682, mount /sdcard).
+# Prefer PSRAM so the SD path stays off the internal-RAM budget.
+CONFIG_FATFS_ALLOC_PREFER_EXTRAM=y

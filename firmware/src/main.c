@@ -21,6 +21,7 @@
 #include "scripting/berry_bindings.h"
 #include "ble/ble_transport.h"
 #include "storage/fs.h"
+#include "storage/sd.h"
 #include "storage/state.h"
 #include "scripting/script_loader.h"
 #include "protocol/protocol.h"
@@ -97,6 +98,7 @@ static void hw_init(void)
 
     dorky_mem_mark("can");
     fs_init();
+    sd_init();
     dorky_mem_mark("fs");
     wifi_init();
     dorky_mem_mark("wifi");
@@ -168,8 +170,10 @@ static bool console_hook(const char *line, const char *lower)
         printf("          scripts | script stop all | script stop <file> | script start <file>\n"
                "          safe (stop all + autostart off) | filter | reboot\n"
                "          trace status | trace gate <free> <big> (bytes) | mem\n");
+        sd_console(line, "help");
         return true;
     }
+    if (sd_console(line, lower)) return true;
     if (strcmp(lower, "scripts") == 0 || strcmp(lower, "script list") == 0) {
         printf("%d script(s)%s\n", s_loader.count, s_safe_mode ? "  [SAFE MODE]" : "");
         for (int i = 0; i < s_loader.count; i++) {

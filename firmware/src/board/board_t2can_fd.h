@@ -1,5 +1,7 @@
 #pragma once
 
+#include "driver/spi_master.h"
+
 /* LilyGo T-2CAN FD (ESP32-S3-WROOM-1, one TWAI + MCP2518FD).
  *
  * Sources:
@@ -26,6 +28,21 @@
 #define BOARD_HAS_RGB_LED       0
 #define BOARD_RGB_LED_GPIO      GPIO_NUM_NC
 #define BOARD_RGB_LED_COUNT     0
+
+/* Adafruit microSD Breakout #4682 on the underside 26-pin field U8.
+ * 3.3 V only (U8 pad 1). SPI3 is exclusive to the card; SPI2 stays on
+ * the MCP2518FD (SCK=12, MOSI=11, MISO=13, CS=10) and must not be reused.
+ *   3V  -> U8 pad 1     GND -> U8 pad 2
+ *   CLK -> U8 pad 15    DO/SO (MISO) -> U8 pad 14
+ *   CMD/SI (MOSI) -> U8 pad 16    D3/CS -> U8 pad 13
+ * Card detect is not wired. D1/DAT2 stay open (SPI mode, not 4-bit SDIO).
+ */
+#define BOARD_HAS_SD            1
+#define BOARD_SD_SPI_HOST       SPI3_HOST
+#define BOARD_SD_SCLK_GPIO      GPIO_NUM_15
+#define BOARD_SD_MISO_GPIO      GPIO_NUM_4
+#define BOARD_SD_MOSI_GPIO      GPIO_NUM_5
+#define BOARD_SD_CS_GPIO        GPIO_NUM_16
 
 /* Which logical bus is the MCP2518FD. 0 = vehicle CAN on CAN-A. */
 #define BOARD_T2CAN_MCP_BUS     0

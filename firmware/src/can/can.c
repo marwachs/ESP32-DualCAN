@@ -1,6 +1,7 @@
 #include "can/can.h"
 #include "can/can_driver.h"
 #include "scripting/berry_bindings.h"
+#include "storage/sd_logger.h"
 
 #include <stdlib.h>
 #include <string.h>
@@ -183,6 +184,12 @@ int can_poll(can_t *c, uint32_t now_ms)
         rx_count++;
         s_rate_count[c->bus_id]++;
         s_last_rx_ms[c->bus_id] = now_ms;
+        /* SD dump sees every frame that reached software, before the
+         * script/trace filter. One volatile load when not logging. */
+        if (sd_logger_is_running())
+            sd_logger_push(c->bus_id, rx.identifier,
+                           (rx.extd ? SD_LOG_FLAG_EXT : 0) | (rx.rtr ? SD_LOG_FLAG_RTR : 0),
+                           rx.data, rx.data_length_code);
         /* Filtered IDs still count for bus health and rx rate above, but are
          * neither streamed over BLE nor cached for scripts. */
         if (!can_filter_allows(c->bus_id, rx.identifier)) continue;
@@ -238,7 +245,12 @@ int can_send(can_t *c, uint32_t id, const uint8_t *data, uint8_t dlc)
         ESP_LOGI(TAG, "SIM bus%d tx id=0x%03" PRIx32 " dlc=%d", c->bus_id, id, dlc);
         return 0;
     }
-    return can_bus_send(c->bus_id, id, data, dlc, 50);
+    esp_err_t err = can_bus_send(c->bus_id, id, data, dlc, 50);
+    /* can_bus_send sends data frames; IDs above 0x7FF only go out extended. */
+    if (err == ESP_OK && sd_logger_is_running())
+        sd_logger_push(c->bus_id, id,
+                       SD_LOG_FLAG_TX | (id > 0x7FFu ? SD_LOG_FLAG_EXT : 0), data, dlc);
+    return err;
 }
 
 void can_set_sim_mode(can_t *c, bool enabled)

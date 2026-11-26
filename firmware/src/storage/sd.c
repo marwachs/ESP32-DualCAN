@@ -20,6 +20,7 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "sdmmc_cmd.h"
+#include "storage/sd_logger.h"
 
 static const char *TAG = "sd";
 
@@ -319,6 +320,10 @@ static esp_err_t do_unmount(bool verbose)
         if (verbose) printf("sd: already unmounted\n");
         return ESP_OK;
     }
+    if (sd_logger_is_running()) {
+        if (verbose) printf("sd: stopping CAN log first\n");
+        (void)sd_logger_stop();
+    }
     esp_err_t err = esp_vfs_fat_sdcard_unmount(SD_MOUNT_POINT, s_card);
     s_card = NULL;
     s_mounted = false;
@@ -584,6 +589,16 @@ static void cmd_format(const char *lower)
     print_fat_size();
 }
 
+bool sd_is_mounted(void)
+{
+    return s_mounted;
+}
+
+esp_err_t sd_mount(void)
+{
+    return do_mount(false);
+}
+
 void sd_init(void)
 {
     ESP_LOGI(TAG, "SPI3 microSD pins sclk=%d miso=%d mosi=%d cs=%d",
@@ -594,13 +609,18 @@ void sd_init(void)
 
 bool sd_console(const char *line, const char *lower)
 {
-    (void)line;
     if (strcmp(lower, "help") == 0) {
-        printf("          sd status | sd mount | sd unmount | sd ls | sd test | sd format yes\n");
+        printf("          sd status | sd mount | sd unmount | sd ls | sd test | sd format yes\n"
+               "          sd log start [prefix] | sd log stop | sd log status | sd log mark <label> | sd log ls\n");
         return true;
     }
     if (strcmp(lower, "sd") == 0 || strcmp(lower, "sd help") == 0) {
-        printf("sd commands: status | mount | unmount | ls | test | format yes\n");
+        printf("sd commands: status | mount | unmount | ls | test | format yes | log ...\n");
+        return true;
+    }
+    if (strncmp(lower, "sd log", 6) == 0 && (lower[6] == '\0' || lower[6] == ' ')) {
+        if (!sd_logger_console(line, lower))
+            printf("unknown: %s  (try: sd log help)\n", line);
         return true;
     }
     if (strcmp(lower, "sd status") == 0) {
@@ -631,6 +651,16 @@ bool sd_console(const char *line, const char *lower)
 }
 
 #else  /* !BOARD_HAS_SD */
+
+bool sd_is_mounted(void)
+{
+    return false;
+}
+
+esp_err_t sd_mount(void)
+{
+    return ESP_ERR_NOT_SUPPORTED;
+}
 
 void sd_init(void) {}
 

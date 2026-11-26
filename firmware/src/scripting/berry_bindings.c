@@ -6,6 +6,7 @@
 #include "can/can.h"
 #include "can/msg_codec.h"
 #include "led/led_rgb.h"
+#include "storage/sd_logger.h"
 #include "storage/state.h"
 #include "debug/dorky_debug.h"
 #include "esp_log.h"
@@ -446,6 +447,79 @@ static int l_dorky_debug(bvm *vm)
     be_return(vm);
 }
 
+/* ---- CAN log to microSD (storage/sd_logger.c) ----
+ * Available on every board so scripts stay portable: without an SD slot
+ * (BOARD_HAS_SD = 0) start/mark return false and status returns nil. */
+
+/* sd_log_start([prefix:str]) -> bool
+ * Start logging all CAN frames (both buses, RX + TX) to
+ * /sdcard/logs/<prefix>_NNNNNN.csv (SavvyCAN CSV, rotating). Default prefix
+ * "can". true if logging (also when already running). Blocks briefly while
+ * the log directory is scanned. */
+static int l_sd_log_start(bvm *vm)
+{
+    const char *prefix = NULL;
+    if (be_top(vm) >= 1 && !be_isnil(vm, 1)) {
+        CHECK_TYPE(vm, 1, be_isstring(vm, 1), "string");
+        prefix = be_tostring(vm, 1);
+    }
+    be_pushbool(vm, sd_logger_start(prefix));
+    be_return(vm);
+}
+
+/* sd_log_stop() -> bool
+ * Flush, fsync and close the current log. true if stopped or not running. */
+static int l_sd_log_stop(bvm *vm)
+{
+    be_pushbool(vm, sd_logger_stop());
+    be_return(vm);
+}
+
+/* sd_log_mark(label:str) -> bool
+ * Record a timestamped marker in the .mrk sidecar of the current log.
+ * false when not logging or the marker queue is full. */
+static int l_sd_log_mark(bvm *vm)
+{
+    CHECK_ARITY(vm, 1);
+    CHECK_TYPE(vm, 1, be_isstring(vm, 1), "string");
+    be_pushbool(vm, sd_logger_mark(be_tostring(vm, 1)));
+    be_return(vm);
+}
+
+/* sd_log_status() -> map | nil
+ * {running, frames, dropped, bytes, kbytes, rotations, file}; nil on boards
+ * without an SD slot. */
+static int l_sd_log_status(bvm *vm)
+{
+#if defined(BOARD_HAS_SD) && BOARD_HAS_SD
+    sd_logger_status_t st;
+    sd_logger_get_status(&st);
+    be_getglobal(vm, "map");
+    be_newmap(vm);
+    be_pushstring(vm, "running");   be_pushbool(vm, st.running);
+    be_data_insert(vm, -3); be_pop(vm, 2);
+    be_pushstring(vm, "frames");    be_pushint(vm, (bint)st.frames);
+    be_data_insert(vm, -3); be_pop(vm, 2);
+    be_pushstring(vm, "dropped");   be_pushint(vm, (bint)st.dropped);
+    be_data_insert(vm, -3); be_pop(vm, 2);
+    /* bint is 32-bit on the device: bytes saturates at 2 GiB, kbytes does not. */
+    be_pushstring(vm, "bytes");
+    be_pushint(vm, (bint)(st.bytes > 0x7FFFFFFFull ? 0x7FFFFFFFull : st.bytes));
+    be_data_insert(vm, -3); be_pop(vm, 2);
+    be_pushstring(vm, "kbytes");    be_pushint(vm, (bint)(st.bytes / 1024));
+    be_data_insert(vm, -3); be_pop(vm, 2);
+    be_pushstring(vm, "rotations"); be_pushint(vm, (bint)st.rotations);
+    be_data_insert(vm, -3); be_pop(vm, 2);
+    be_pushstring(vm, "file");      be_pushstring(vm, st.file);
+    be_data_insert(vm, -3); be_pop(vm, 2);
+    be_call(vm, 1);
+    be_pop(vm, 1); // pop the arguments
+    be_return(vm);
+#else
+    be_return_nil(vm);
+#endif
+}
+
 /* ---- Registration ----
  * Called once during Berry VM initialisation to expose all native functions.
  * The names here are what Berry scripts see at global scope. Keep the
@@ -476,6 +550,12 @@ void berry_register_bindings(bvm *vm)
     be_regfunc(vm, "state_set", l_state_set);
     be_regfunc(vm, "state_get", l_state_get);
     be_regfunc(vm, "state_remove", l_state_remove);
+
+    /* CAN log to microSD (no-op / nil on boards without SD) */
+    be_regfunc(vm, "sd_log_start",  l_sd_log_start);
+    be_regfunc(vm, "sd_log_stop",   l_sd_log_stop);
+    be_regfunc(vm, "sd_log_mark",   l_sd_log_mark);
+    be_regfunc(vm, "sd_log_status", l_sd_log_status);
 
     /* Timers and actions (berry_registry.c) */
     berry_register_registry(vm);

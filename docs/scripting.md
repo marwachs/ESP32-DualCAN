@@ -60,6 +60,10 @@ Metadata fields (`@name`, `@description`, `@bus`) appear in the web UI.
 | `state_remove(key)` | — | Delete key from NVS flash |
 | `millis()` | int | Milliseconds since boot |
 | `dorky_debug()` / `dorky_debug(on)` | bool | Persistentes Debug-Flag (NVS) abfragen oder setzen |
+| `sd_log_start([prefix])` | bool | Start the CAN-to-microSD log (`/sdcard/logs/<prefix>_NNNNNN.csv`, SavvyCAN CSV, rotating). `false` without SD |
+| `sd_log_stop()` | bool | Flush, fsync and close the SD log |
+| `sd_log_mark(label)` | bool | Timestamped marker in the `.mrk` sidecar of the current log |
+| `sd_log_status()` | map \| nil | `{running, frames, dropped, bytes, kbytes, rotations, file}`; `nil` without SD |
 | `print(msg)` | — | Log to web UI panel |
 | `str(v)` | string | Convert any value to string |
 | `format(fmt, ...)` | string | C-style string formatting |

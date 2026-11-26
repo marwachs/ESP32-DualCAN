@@ -69,6 +69,17 @@ Do not flash an `esp32-c6` binary onto the T-2CAN FD.
 
 The T-2CAN FD build also talks to an Adafruit microSD Breakout (#4682) on SPI3 (U8 pads: SCLK `IO15`, MISO `IO4`, MOSI `IO5`, CS `IO16`; 3.3 V only). It is mounted at `/sdcard` when a card is present. SPI2 stays on the MCP2518FD. Console: `sd status`, `sd mount`, `sd unmount`, `sd ls`, `sd test`, `sd format yes` (wipes the card, writes MBR + FAT32). A missing card does not fail the boot.
 
+#### CAN log to microSD (T-2CAN FD)
+
+`sd log start [prefix]` dumps every CAN frame (both buses, RX and TX, before the script/trace RX filter) to `/sdcard/logs/<prefix>_NNNNNN.csv` (default prefix `can`). Frames go into a 16384-frame PSRAM ring from the CAN poll loop (never blocks; overflow is counted as `dropped`), a low-priority writer task formats them in a 4 KB internal DMA-capable buffer (its stack lives in PSRAM) and writes to the card, with `fflush` + `fsync` every 2 s and on rotation/stop.
+
+- Format: SavvyCAN native CSV (`Time Stamp,ID,Extended,Dir,Bus,LEN,D1..D8`, timestamps in µs since boot, IDs as 8-digit hex) — opens directly in SavvyCAN (*Load Log File → GVRET native CSV*) or a spreadsheet.
+- Markers (`sd log mark <label>`, `sd_log_mark()`) go to a sidecar `<prefix>_NNNNNN.mrk` (`Time Stamp,Label`) with the same timebase, so the CSV stays loadable unchanged.
+- Rotation: a new file every 16 MB. Numbering continues from the highest number in `/sdcard/logs` (shared by all prefixes), so a reboot never overwrites a log.
+- Free-space guard: before each new file, the lowest-numbered logs (and their `.mrk`) are deleted until at least 256 MB are free. The open file is never deleted.
+- Console: `sd log start [prefix]`, `sd log stop`, `sd log status`, `sd log mark <label>`, `sd log ls`, `sd log limits <file_MB> [min_free_MB]` (runtime only). `sd unmount` / `sd format yes` stop the logger first.
+- Berry: `sd_log_start([prefix])`, `sd_log_stop()`, `sd_log_mark(label)`, `sd_log_status()` (see [docs/scripting.md](../docs/scripting.md)). On boards without an SD slot these return `false` / `nil` and the logger compiles out (`BOARD_HAS_SD`).
+
 
 ### Monitor & Test
 

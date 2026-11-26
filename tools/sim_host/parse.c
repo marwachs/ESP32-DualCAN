@@ -1,4 +1,4 @@
-/* Syntax-Check: kompiliert eine .be-Datei mit dem Firmware-Berry (Bindings als Dummys). */
+/* Syntax check: compiles a .be file with the firmware Berry (bindings as dummies). */
 #include <stdio.h>
 #include <stdlib.h>
 #include "berry.h"

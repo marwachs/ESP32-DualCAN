@@ -1,5 +1,5 @@
-"""Dekodiert die Host-Dump-Frames (SIM_DUMP) mit dbc/Model3_VEH.dbc und
-druckt pro Sekunde die simulierten Werte. pip install cantools"""
+"""Decodes the host dump frames (SIM_DUMP) with dbc/Model3_VEH.dbc and
+prints the simulated values once per second. pip install cantools"""
 import sys, cantools
 db = cantools.database.load_file(sys.argv[1], strict=False)
 want = {0x118: ['DI_gear', 'DI_brakePedalState', 'DI_accelPedalPos', 'DI_vehicleAcceleration', 'DI_systemState'],

@@ -37,7 +37,13 @@
  *   CMD/SI (MOSI) -> U8 pad 16    D3/CS -> U8 pad 13
  * Card detect is not wired. D1/DAT2 stay open (SPI mode, not 4-bit SDIO).
  */
+/* Default 1. Override with -DBOARD_HAS_SD=0 (or the t2can-fd-no-sd env)
+ * to compile out the SPI3 driver, `sd` / `sd log` console commands, the
+ * logger task/buffer, and the Berry sd_log_* implementations. A missing
+ * card or unsoldered breakout never fails the default t2can-fd build. */
+#ifndef BOARD_HAS_SD
 #define BOARD_HAS_SD            1
+#endif
 #define BOARD_SD_SPI_HOST       SPI3_HOST
 #define BOARD_SD_SCLK_GPIO      GPIO_NUM_15
 #define BOARD_SD_MISO_GPIO      GPIO_NUM_4

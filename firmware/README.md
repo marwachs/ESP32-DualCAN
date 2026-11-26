@@ -49,6 +49,8 @@ pio run -e esp32-c6              # Dorky ESP32-C6
 pio run -e esp32-c6 -t upload
 pio run -e t2can-fd              # LilyGo T-2CAN FD (ESP32-S3)
 pio run -e t2can-fd -t upload
+pio run -e t2can-fd-no-sd        # same board, microSD driver and logger compiled out
+pio run -e t2can-fd-no-sd -t upload
 ```
 
 `t2can-fd` is `-DBOARD_T2CAN_FD`. Bus 0 (vehicle CAN) is the MCP2518FD on SPI; bus 1 (chassis CAN) is the single ESP32-S3 TWAI. Swap that in `src/board/board_t2can_fd.h` (`BOARD_T2CAN_MCP_BUS`) if you need the opposite. The MCP2518FD driver is Pierre Molinaro's [ACAN2517FD](https://github.com/pierremolinaro/acan2517FD) (MIT, copyright 2018 Pierre Molinaro), vendored under `components/acan2517fd/`, run in CAN 2.0B mode at the NVS bitrate (default 500 kbit/s). CAN FD is not enabled; the data-phase timing is still programmed at 1× so turning it on later is a mode change.
@@ -82,6 +84,20 @@ The T-2CAN FD build also talks to an Adafruit microSD Breakout (#4682) on SPI3 (
 - Console: `sd log start [prefix]`, `sd log stop`, `sd log status`, `sd log mark <label>`, `sd log ls`, `sd log limits <file_MB> [min_free_MB]` (runtime only). `sd unmount` / `sd format yes` stop the logger first.
 - Berry: `sd_log_start([prefix])`, `sd_log_stop()`, `sd_log_mark(label)`, `sd_log_status()` (see [docs/scripting.md](../docs/scripting.md)). On boards without an SD slot these return `false` / `nil` and the logger compiles out (`BOARD_HAS_SD`).
 
+#### Using T-2CAN FD without a microSD board
+
+The stock LilyGo T-2CAN FD has no microSD slot. The default `t2can-fd` firmware still boots and runs CAN, BLE, the web UI and Berry as usual. You do not need the Adafruit breakout soldered for normal use.
+
+At boot, `sd_init()` brings up SPI3 on the U8 pads and tries to mount a card (20 / 10 / 4 / 1 MHz). If nothing is connected or no card is present, it logs `no card or mount failed` and continues — it never fails the boot. The logger task and its buffers are not started until you run `sd log start` or `sd_log_start()`.
+
+To leave the microSD driver and CAN SD logger out of the binary entirely (no SPI3 init, no `sd` / `sd log` console commands, no logger task or ring buffer; Berry `sd_log_start()` / `sd_log_mark()` return `false` and `sd_log_status()` returns `nil`):
+
+```bash
+pio run -e t2can-fd-no-sd
+pio run -e t2can-fd-no-sd -t upload
+```
+
+That is `-DBOARD_HAS_SD=0`. `board_t2can_fd.h` only sets `BOARD_HAS_SD` to 1 when the macro is not already defined, so you can also pass `-DBOARD_HAS_SD=0` on a custom `t2can-fd` build. The ESP32-C6 target never includes this code.
 
 ### Monitor & Test
 

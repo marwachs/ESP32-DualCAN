@@ -79,6 +79,16 @@ uint32_t millis(void)
 
 #include "SPI.h"
 
+#include "soc/soc_caps.h"
+
+/* The bus is initialised with SPI_DMA_DISABLED, so the host can move at most
+ * SOC_SPI_MAXIMUM_BUFFER_SIZE bytes (64 on ESP32-S3/C6) per transaction.
+ * Larger transactions are rejected by spi_master ("txdata transfer > host
+ * maximum"), which silently dropped RAM/FIFO reads under heavy CAN load.
+ * CS is driven manually by the driver, so splitting a burst into several
+ * transactions is transparent to the MCP2518FD. */
+#define DORKY_SPI_MAX_CHUNK SOC_SPI_MAXIMUM_BUFFER_SIZE
+
 esp_err_t SPIClass::begin(int sclk, int miso, int mosi)
 {
     if (!m_lock) m_lock = xSemaphoreCreateMutex();
@@ -89,7 +99,7 @@ esp_err_t SPIClass::begin(int sclk, int miso, int mosi)
         bus.miso_io_num = miso;
         bus.quadwp_io_num = -1;
         bus.quadhd_io_num = -1;
-        bus.max_transfer_sz = 128;
+        bus.max_transfer_sz = DORKY_SPI_MAX_CHUNK;
         esp_err_t err = spi_bus_initialize(m_host, &bus, SPI_DMA_DISABLED);
         if (err != ESP_OK && err != ESP_ERR_INVALID_STATE) return err;
         spi_device_interface_config_t dev = {};
@@ -118,7 +128,7 @@ void SPIClass::endTransaction()
 void SPIClass::transfer(uint8_t *buf, size_t len)
 {
     if (!m_dev || !buf || !len) return;
-    uint8_t rx[96];
+    uint8_t rx[DORKY_SPI_MAX_CHUNK];
     while (len) {
         size_t n = len > sizeof(rx) ? sizeof(rx) : len;
         spi_transaction_t t = {};

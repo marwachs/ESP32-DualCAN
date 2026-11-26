@@ -88,6 +88,14 @@ CONFIG_ESP_WIFI_RX_BA_WIN=6
 # CONFIG_ESP_WIFI_IRAM_OPT is not set
 # CONFIG_ESP_WIFI_RX_IRAM_OPT is not set
 
-# FATFS buffers for the SPI3 microSD slot (Adafruit #4682, mount /sdcard).
-# Prefer PSRAM so the SD path stays off the internal-RAM budget.
-CONFIG_FATFS_ALLOC_PREFER_EXTRAM=y
+# FATFS for the SPI3 microSD slot (Adafruit #4682, mount /sdcard).
+# Do NOT place FATFS sector windows in PSRAM: ESP32-S3 SPI DMA cannot
+# reliably DMA into PSRAM, and the first sector read then fails with
+# ESP_ERR_INVALID_RESPONSE (0x108) / ESP_ERR_TIMEOUT (0x107).
+# CONFIG_FATFS_ALLOC_PREFER_EXTRAM is not set
+# 512-byte sectors match SD cards and stay under
+# SPIRAM_MALLOC_ALWAYSINTERNAL (1024), so malloc() keeps the window
+# in internal RAM even without the EXTRAM preference.
+CONFIG_FATFS_SECTOR_512=y
+# CONFIG_FATFS_SECTOR_4096 is not set
+CONFIG_FATFS_LFN_HEAP=y

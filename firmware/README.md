@@ -67,7 +67,7 @@ The PlatformIO board is `esp32-s3-devkitc1-n16r8` (16 MB quad flash, 8 MB octal 
 
 Do not flash an `esp32-c6` binary onto the T-2CAN FD.
 
-The T-2CAN FD build also talks to an Adafruit microSD Breakout (#4682) on SPI3 (U8 pads: SCLK `IO15`, MISO `IO4`, MOSI `IO5`, CS `IO16`; 3.3 V only). It is mounted at `/sdcard` when a card is present. SPI2 stays on the MCP2518FD. Console: `sd status`, `sd mount`, `sd unmount`, `sd ls`, `sd test`. A missing card does not fail the boot.
+The T-2CAN FD build also talks to an Adafruit microSD Breakout (#4682) on SPI3 (U8 pads: SCLK `IO15`, MISO `IO4`, MOSI `IO5`, CS `IO16`; 3.3 V only). It is mounted at `/sdcard` when a card is present. SPI2 stays on the MCP2518FD. Console: `sd status`, `sd mount`, `sd unmount`, `sd ls`, `sd test`, `sd format yes` (wipes the card, writes MBR + FAT32). A missing card does not fail the boot.
 
 
 ### Monitor & Test

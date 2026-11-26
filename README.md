@@ -1,7 +1,14 @@
 # ESP32-DualCAN - aka Dorky Commander
 Open source alternative to S3XY Commander with Molex connector compatible with Enhauto harnesses.
 
-ESP32-C6 functions: 
+Two boards run this firmware. The web UI is the same and connects over BLE on both.
+
+- **Dorky Commander** — ESP32-C6-SuperMini, two on-chip TWAI controllers. This is the board the hardware in this repo describes.
+- **LilyGo T-2CAN FD** — ESP32-S3, one on-chip TWAI plus an MCP2518FD. Vehicle CAN (bus 0) is the MCP2518FD, chassis CAN (bus 1) is the TWAI. Wiring to an Enhauto / S3XY harness is in [`docs/wiring-t2can-fd-s3xy.md`](docs/wiring-t2can-fd-s3xy.md).
+  - Optional: an SPI3 microSD card (e.g. Adafruit #4682 breakout on the U8 header, verified at 20 MHz) adds a lossless CAN-to-SD logger — SavvyCAN CSV, both buses, file rotation, `sd log …` console commands and Berry bindings (`sd_log_start()` etc.). See [`firmware/README.md`](firmware/README.md).
+  - Bench test without a car: [`docs/simulator.md`](docs/simulator.md) (CAN-A sends simulated Model 3/Y frames, CAN-B checks them).
+
+ESP32-C6 functions:
 - Dual CAN
 - BLE for WebUI, OTA and TeslaBLE
 - WiFi (file browser)
@@ -34,6 +41,8 @@ See [`hardware/README.md`](hardware/README.md) for detailed spec and schematics.
    pip install esptool
    esptool.py --chip esp32c6 write_flash 0x10000 dorky-commander-vX.Y.Z.bin
    ```
+
+   The T-2CAN FD image is a different chip. Build `pio run -e t2can-fd` and flash with `--chip esp32s3`. Offsets and the full image layout are in [firmware/README.md](firmware/README.md#build--flash).
 
 To build from source, see [firmware/README.md — Development — Build & Flash](firmware/README.md#build--flash) (PlatformIO extension recommended).
 

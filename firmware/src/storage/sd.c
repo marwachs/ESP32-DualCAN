@@ -210,7 +210,9 @@ static void fill_mount_cfg(esp_vfs_fat_mount_config_t *cfg, bool format_if_faile
     *cfg = (esp_vfs_fat_mount_config_t){
         .format_if_mount_failed = format_if_failed,
         .max_files = SD_MAX_FILES,
-        .allocation_unit_size = 16 * 1024,
+        /* 64 KB clusters keep the FAT small on 64 GB+ SDXC cards (f_mkfs
+         * writes ~4x less over SPI than with 16 KB clusters). */
+        .allocation_unit_size = 64 * 1024,
         .disk_status_check_enable = false,
         .use_one_fat = false,
     };

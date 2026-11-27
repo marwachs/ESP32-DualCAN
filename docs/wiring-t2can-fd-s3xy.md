@@ -1,6 +1,6 @@
 # Wiring the LilyGo T-2CAN FD to an Enhauto / S3XY harness
 
-Model 3 and Model Y focus. The web UI does not change: it still connects over BLE. This page is only the cable between the car harness and the T-2CAN FD screw terminals.
+Model 3 and Model Y focus. The web UI does not change: it still connects over BLE. This page is only the cable between the car harness and the T-2CAN FD screw terminals. A 3D-printed enclosure for the board is in [`hardware/case-t2can-fd/`](../hardware/case-t2can-fd/).
 
 ![Harness plug to T-2CAN FD terminals](img/wiring-t2can-fd-s3xy.png)
 

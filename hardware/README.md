@@ -1,6 +1,6 @@
 # Hardware — ESP32-DualCAN
 
-The firmware also runs on a LilyGo T-2CAN FD (ESP32-S3 + MCP2518FD + TWAI). That board is not this PCB. Pin map, power, termination, and the Enhauto / S3XY harness adapter are in [`docs/wiring-t2can-fd-s3xy.md`](../docs/wiring-t2can-fd-s3xy.md).
+The firmware also runs on a LilyGo T-2CAN FD (ESP32-S3 + MCP2518FD + TWAI). That board is not this PCB. Pin map, power, termination, and the Enhauto / S3XY harness adapter are in [`docs/wiring-t2can-fd-s3xy.md`](../docs/wiring-t2can-fd-s3xy.md). A 3D-printed enclosure for the T-2CAN FD is in [`case-t2can-fd/`](case-t2can-fd/).
 
 ## Dorky Commander PCB
 
@@ -15,8 +15,10 @@ The firmware also runs on a LilyGo T-2CAN FD (ESP32-S3 + MCP2518FD + TWAI). That
 - USB-C - USB CDC (virtual COM, debugging)  
 
 ## Case
-Designed in FreeCAD
+The Dorky Commander case lives in [`case/`](case/) (FreeCAD).
 - size 23.5 x 42.8 x 12.3 mm
+
+The LilyGo T-2CAN FD enclosure is separate: [`case-t2can-fd/`](case-t2can-fd/).
 
 ## ICs
 - ESP32-C6-Zero (ESP32-C6FH8, 8MB, BLE + WiFi, 2x TWAI CAN2.0 controllers)
